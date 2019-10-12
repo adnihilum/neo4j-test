@@ -26,6 +26,9 @@ dependencies:
 - text
 - mtl
 
+default-extensions:
+- OverloadedStrings
+- BlockArguments
 
 library:
   source-dirs: src
