@@ -1,12 +1,15 @@
 module Main where
-    
+
+import Control.Monad.Except
 import Control.Monad.IO.Class
 import Data.Default
 import qualified Data.Text as T
+import Database
 import qualified Database.Bolt as B
 import Database.Bolt (BoltActionT)
+import Domain
 
-main :: (MonadIO m) => m ()
+main :: (Show e, MonadError e m, MonadIO m) => m ()
 main = do
   let config =
         def
@@ -20,10 +23,36 @@ main = do
   B.close pipe
   return ()
 
-action :: (MonadIO m) => BoltActionT m ()
+action :: (Show e, MonadError e m, MonadIO m) => BoltActionT m ()
 action = do
-  B.query "CREATE (p:Person)-[:LIKES]->(t:Technology)" >>= print_
-  B.query "MATCH (p:Person)-[:LIKES]-(t:Technology) RETURN p, t" >>= print_
+  setConstrains
+  catchIOError $
+    createReaction Reaction {reactionId = 101, reactionName = "ssss"}
+  catchIOError
+    $createMolecule
+    Molecule
+      { moleculeId = 201
+      , moleculeIupacName = "some molecule iupack"
+      , moleculeSmiles = "some molecule smiles"
+      }
+  catchIOError
+    $createCatalyst
+    Catalyst
+      { catalystId = 301
+      , catalystSmiles = "some catalyst smiles"
+      , catalystName = Just "awesome catalyst"
+      }
   return ()
+
+-- IO helpers 
+print_ :: (MonadIO m, Show a) => a -> m ()
+print_ = liftIO . print
+
+catchIOError ::
+     forall e m. (MonadError e m, MonadIO m, Show e)
+  => m ()
+  -> m ()
+catchIOError ma = catchError ma printError
   where
-    print_ = liftIO . print
+    printError :: e -> m ()
+    printError err = liftIO (putStr "IO exception: " >> print err)

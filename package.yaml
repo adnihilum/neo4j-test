@@ -25,10 +25,13 @@ dependencies:
 - data-default
 - text
 - mtl
+- containers
 
 default-extensions:
 - OverloadedStrings
 - BlockArguments
+- ScopedTypeVariables
+- RankNTypes
 
 library:
   source-dirs: src
