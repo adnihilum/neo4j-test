@@ -26,12 +26,17 @@ dependencies:
 - text
 - mtl
 - containers
+- random
+
 
 default-extensions:
 - OverloadedStrings
 - BlockArguments
 - ScopedTypeVariables
 - RankNTypes
+- FlexibleContexts
+- MultiParamTypeClasses
+- FlexibleInstances
 
 library:
   source-dirs: src
