@@ -3,21 +3,16 @@ module MonadRandom where
 import Control.Monad.State
 import System.Random
 
-type MonadRandomT m = StateT StdGen m
+type RandomM = State StdGen
 
-class (MonadState StdGen m) =>
-      MonadRandom m
-  where
-  randomR' :: (Random a) => (a, a) -> m a
+randomR' :: (Random a) => (a, a) -> RandomM a
+randomR' range = do
+  g <- get
+  let (ret, g') = randomR range g
+  put g'
+  return ret
 
-instance (Monad m) => MonadRandom (StateT StdGen m) where
-  randomR' range = do
-    g <- get
-    let (ret, g') = randomR range g
-    put g'
-    return ret
-
-runGenerator :: (Monad m) => Int -> MonadRandomT m a -> m a
-runGenerator x ma = fst <$> runStateT ma gen
+runRandomM :: Int -> RandomM a -> a
+runRandomM x a = evalState a gen
   where
     gen = mkStdGen x

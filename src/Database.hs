@@ -9,6 +9,10 @@ import qualified Database.Bolt as B
 import Database.Bolt (BoltActionT)
 import Domain
 
+--class (MonadIO m ) => MonadBolt m where
+--lift :: (Monad m) => m a => BoltActionT m a
+--lift = lift 
+--extractMonadBolt :: (MonadBolt m) => m a => BoltActionT m a
 -- Neo4j db stuff
 setConstrains :: (MonadIO m) => BoltActionT m ()
 setConstrains = do
@@ -54,3 +58,11 @@ createCatalyst catalyst =
         ] ++
         maybeToList ((,) "name" . B.T . T.pack <$> catalystName catalyst))
     ]
+
+-- create links  for a reaction
+linkReaction ::
+     (MonadIO m)
+  => (Int, Int, Int, Int, ACCELERATE, PRODUCT_FROM)
+  -> BoltActionT m ()
+linkReaction (reactionId, reagentAId, reagentBId, resultId, accelerate, productFrom) =
+  undefined
