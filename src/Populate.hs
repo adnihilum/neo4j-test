@@ -2,18 +2,22 @@ module Populate
   ( populate
   ) where
 
+import Control.Monad.Except
 import Control.Monad.IO.Class
 import Control.Monad.Reader
 import Control.Monad.State.Strict
 import Database
 import Database.Bolt (BoltActionT)
 import Domain
+import IOHelpers
 import MonadRandom
 
 --TODO: generate complete reactions with reagents, catalyst, and links
-populate :: (MonadIO m) => BoltActionT m ()
+populate :: (Show e, MonadError e m, MonadIO m) => BoltActionT m ()
 populate = do
-  populateObjects
+  setConstrains
+  deleteAllNodes
+  catchIOError populateObjects
   populateLinkedReactions
 
 --1. population objects
@@ -24,6 +28,8 @@ populateObjects = do
   let reactions = genReaction <$> ids
   let catalysts = genCatalyst <$> ids
   mapM_ createMolecule molecules
+  mapM_ createReaction reactions
+  mapM_ createCatalyst catalysts
 
 idRange :: (Int, Int)
 idRange = (1, 20)
@@ -43,14 +49,22 @@ populateLinkedReactions = do
   sequence_ reactions
 
 genRandomLinkedReactions ::
-     Int -> RandomM (Int, Int, Int, Int, ACCELERATE, PRODUCT_FROM)
+     Int -> RandomM (Int, Int, Int, Int, Int, ACCELERATE, PRODUCT_FROM)
 genRandomLinkedReactions reactionId = do
-  reagentA <- randomR' idRange
-  reagentB <- randomR' idRange
-  result <- randomR' idRange
+  reagentAId <- randomR' idRange
+  reagentBId <- randomR' idRange
+  resultId <- randomR' idRange
+  catalystId <- randomR' idRange
   accelerate <- accelerateR
   productFrom <- productFromR
-  return (reactionId, reagentA, reagentB, result, accelerate, productFrom)
+  return
+    ( reactionId
+    , reagentAId
+    , reagentBId
+    , resultId
+    , catalystId
+    , accelerate
+    , productFrom)
   where
     accelerateR = do
       pressure <- randomR' (1.0, 100.0)

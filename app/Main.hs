@@ -8,6 +8,8 @@ import Database
 import qualified Database.Bolt as B
 import Database.Bolt (BoltActionT)
 import Domain
+import IOHelpers
+import Populate
 
 main :: (Show e, MonadError e m, MonadIO m) => m ()
 main = do
@@ -25,34 +27,5 @@ main = do
 
 action :: (Show e, MonadError e m, MonadIO m) => BoltActionT m ()
 action = do
-  setConstrains
-  catchIOError $
-    createReaction Reaction {reactionId = 101, reactionName = "ssss"}
-  catchIOError
-    $createMolecule
-    Molecule
-      { moleculeId = 201
-      , moleculeIupacName = "some molecule iupack"
-      , moleculeSmiles = "some molecule smiles"
-      }
-  catchIOError
-    $createCatalyst
-    Catalyst
-      { catalystId = 301
-      , catalystSmiles = "some catalyst smiles"
-      , catalystName = Just "awesome catalyst"
-      }
+  catchIOError $ populate
   return ()
-
--- IO helpers 
-print_ :: (MonadIO m, Show a) => a -> m ()
-print_ = liftIO . print
-
-catchIOError ::
-     forall e m. (MonadError e m, MonadIO m, Show e)
-  => m ()
-  -> m ()
-catchIOError ma = catchError ma printError
-  where
-    printError :: e -> m ()
-    printError err = liftIO (putStr "IO exception: " >> print err)

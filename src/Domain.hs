@@ -6,6 +6,7 @@ data Molecule =
     , moleculeSmiles :: String
     , moleculeIupacName :: String
     }
+  deriving (Show)
 
 data Reaction =
   Reaction
