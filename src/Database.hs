@@ -6,7 +6,7 @@ import Data.Foldable (fold)
 import Data.List (intersperse)
 import qualified Data.Map.Strict as M
 import Data.Map.Strict ((!?), toList)
-import Data.Maybe (fromMaybe, maybeToList)
+import Data.Maybe (fromMaybe, listToMaybe, maybeToList)
 import qualified Data.Text as T
 import qualified Database.Bolt as B
 import Database.Bolt (BoltActionT)
@@ -101,6 +101,19 @@ linkReaction (reactionId, reagentAId, reagentBId, resultId, catalystId, accelera
           ]
   B.queryP_ query queryParams
 
+getReaction :: (MonadIO m) => Int -> BoltActionT m (Maybe Reaction)
+getReaction reactionId = do
+  let query = "match (reaction:Reaction{id: $reactionId}) return reaction.name"
+  let queryParams = M.fromList [("reactionId", B.I reactionId)]
+  reactions <- B.queryP query queryParams
+  --extractFieldValue :: B.Value -> Maybe B.
+  let decodeReaction [("reaction.name", B.T name)] =
+        return $
+        Reaction {reactionName = T.unpack name, reactionId = reactionId}
+      decodeReaction _ = error "unknown value from db"
+  return $ listToMaybe reactions >>= return . toList >>= decodeReaction
+
+-- 
 findShortestReactionPath :: (MonadIO m) => Int -> Int -> BoltActionT m [Int]
 findShortestReactionPath startMoleculeId endMoleculeId = do
   let queryList =

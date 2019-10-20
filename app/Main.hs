@@ -30,4 +30,5 @@ action = do
   catchIOError $ populate
   shortestPath <- findShortestReactionPath 17 14
   liftIO $ print shortestPath
+  getReaction 14 >>= print_
   return ()

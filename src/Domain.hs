@@ -13,6 +13,7 @@ data Reaction =
     { reactionId :: Int
     , reactionName :: String
     }
+  deriving (Show)
 
 data Catalyst =
   Catalyst
