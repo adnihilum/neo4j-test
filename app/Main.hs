@@ -28,4 +28,6 @@ main = do
 action :: (Show e, MonadError e m, MonadIO m) => BoltActionT m ()
 action = do
   catchIOError $ populate
+  shortestPath <- findShortestReactionPath 17 14
+  liftIO $ print shortestPath
   return ()

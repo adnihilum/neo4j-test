@@ -5,7 +5,8 @@ import Control.Monad.IO.Class
 import Data.Foldable (fold)
 import Data.List (intersperse)
 import qualified Data.Map.Strict as M
-import Data.Maybe (maybeToList)
+import Data.Map.Strict ((!?), toList)
+import Data.Maybe (fromMaybe, maybeToList)
 import qualified Data.Text as T
 import qualified Database.Bolt as B
 import Database.Bolt (BoltActionT)
@@ -99,3 +100,27 @@ linkReaction (reactionId, reagentAId, reagentBId, resultId, catalystId, accelera
                 [("ammount", B.F $ realToFrac $ productFromAmount productFrom)])
           ]
   B.queryP_ query queryParams
+
+findShortestReactionPath :: (MonadIO m) => Int -> Int -> BoltActionT m [Int]
+findShortestReactionPath startMoleculeId endMoleculeId = do
+  let queryList =
+        [ "MATCH (start:Molecule{id:$startMoleculeId}), (end:Molecule{id:$endMoleculeId})"
+        , "CALL algo.shortestPath.stream(start, end, 'cost',{"
+        , "nodeQuery:'MATCH(m:Molecule) RETURN id(m) as id',"
+        , "relationshipQuery:'MATCH(reagent:Molecule)-[rl:REAGENT_IN]->(reaction:Reaction) " <>
+          "MATCH (reaction) - [productRel:PRODUCT_FROM] -> (product:Molecule) " <>
+          "RETURN id(reagent) as source, id(product) as target, productRel.ammount as weight',"
+        , "graph:'cypher'})"
+        , "YIELD nodeId"
+        , "RETURN algo.asNode(nodeId).id"
+        ]
+  let query = fold $ intersperse "\n" queryList
+  let queryParams =
+        M.fromList
+          [ ("startMoleculeId", B.I startMoleculeId)
+          , ("endMoleculeId", B.I endMoleculeId)
+          ]
+  result <- B.queryP query queryParams
+  liftIO $ print result
+  let extractNodeId [(_, B.I x)] = x
+  return $ (extractNodeId . toList) <$> result
